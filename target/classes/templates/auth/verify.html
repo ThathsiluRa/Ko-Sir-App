@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<!--
+    OTP VERIFICATION PAGE
+    =====================================================
+    Shown after registration when requireVerification=true.
+    The user must enter the 6-digit code sent to their
+    phone (SMS) and email to activate their account.
+
+    URL:  GET  /verify  → show this form
+    URL:  POST /verify  → VerificationController.verifyOtp()
+    URL:  GET  /verify?resend=true → resend a fresh OTP
+
+    Thymeleaf variables set by VerificationController:
+      ${error}   - error message string (wrong code, expired, etc.)
+      ${message} - success / info message (code resent, etc.)
+    =====================================================
+-->
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <!-- Import shared head: Bootstrap, Fonts, CSS -->
+    <head th:replace="~{layout/base :: head}"></head>
+    <title>Verify Account | Ko-Sir AI</title>
+    <style>
+        /* Override body for full-page green background */
+        body { background: var(--green-deep) !important; }
+    </style>
+</head>
+
+<body class="verify-page">
+
+<!--
+    CENTERED VERIFICATION CARD
+    Full-page green background, single white card in the center.
+    The .verify-page class in style.css handles the layout.
+-->
+<div class="verify-card">
+
+    <!-- Brand logo at top -->
+    <div class="mb-4" style="text-align:center;">
+        <a th:href="@{/}" class="auth-brand" style="justify-content:center; text-decoration:none;">
+            <span class="brand-logo" style="width:40px;height:40px;background:var(--green-deep);color:var(--gold);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;">
+                <i class="bi bi-mortarboard-fill"></i>
+            </span>
+            <span style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.6rem;color:var(--green-deep);margin-left:8px;">
+                Ko-Sir<span style="color:var(--gold);">AI</span>
+            </span>
+        </a>
+    </div>
+
+    <!-- Lock icon -->
+    <div class="verify-icon">
+        <i class="bi bi-shield-lock-fill"></i>
+    </div>
+
+    <!-- Title and instructions -->
+    <h2>Verify Your Account</h2>
+    <p>
+        We sent a 6-digit code to your <strong>phone</strong> and <strong>email</strong>.<br>
+        Enter it below to activate your Ko-Sir AI account.
+    </p>
+
+    <!-- =====================================================
+         ERROR MESSAGE
+         Shown when: wrong code, expired code, no pending OTP
+         Set by VerificationController as model attribute "error"
+         ===================================================== -->
+    <div th:if="${error}"
+         class="alert alert-danger alert-dismissible fade show mb-3"
+         role="alert" style="text-align:left;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span th:text="${error}">Error message</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- =====================================================
+         SUCCESS / INFO MESSAGE
+         Shown when: code was resent successfully
+         Set by VerificationController as model attribute "message"
+         ===================================================== -->
+    <div th:if="${message}"
+         class="alert alert-success alert-dismissible fade show mb-3"
+         role="alert" style="text-align:left;">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${message}">Info message</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- =====================================================
+         OTP FORM
+         POST /verify with the 6-digit code.
+         Spring Security requires CSRF token on all POST forms.
+         ===================================================== -->
+    <form th:action="@{/verify}" method="post">
+        <!-- CSRF token — Spring Security requires this on every POST -->
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+        <!--
+            OTP Input: large monospaced digits
+            maxlength="6" prevents typing more than 6 characters.
+            pattern="[0-9]{6}" adds browser-side validation.
+            autofocus puts cursor here automatically.
+        -->
+        <input type="text"
+               name="otpCode"
+               class="otp-input"
+               placeholder="— — — — — —"
+               maxlength="6"
+               pattern="[0-9]{6}"
+               inputmode="numeric"
+               autocomplete="one-time-code"
+               autofocus
+               required>
+
+        <!-- Submit button -->
+        <button type="submit" class="btn-accent btn-block"
+                style="width:100%;padding:0.85rem;font-size:1rem;font-weight:700;border-radius:14px;border:none;cursor:pointer;background:var(--gold);color:var(--green-deep);">
+            <i class="bi bi-check-lg me-2"></i>Verify Account
+        </button>
+    </form>
+
+    <!-- =====================================================
+         RESEND LINK
+         GET /verify?resend=true → VerificationController.showVerifyForm()
+         checks the resend param, generates a new OTP, and shows a message.
+         ===================================================== -->
+    <div class="verify-resend">
+        Didn't receive the code?
+        <a th:href="@{/verify(resend=true)}">Resend Code</a>
+    </div>
+
+    <!-- Back to login -->
+    <div class="verify-resend" style="margin-top:0.5rem;">
+        <a th:href="@{/login}" style="color:var(--text-muted);">
+            <i class="bi bi-arrow-left me-1"></i>Back to Login
+        </a>
+    </div>
+
+</div><!-- end .verify-card -->
+
+<!-- Load Bootstrap JS + custom JS -->
+<div th:replace="~{layout/base :: scripts}"></div>
+
+</body>
+</html>

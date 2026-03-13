@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <head th:replace="~{layout/base :: head}"></head>
+    <title>Admin Dashboard | Ko-Sir AI</title>
+</head>
+<body>
+<nav th:replace="~{layout/base :: navbar}"></nav>
+<div th:replace="~{layout/base :: flashMessages}"></div>
+
+<div class="container py-4">
+
+    <div class="page-header mb-4">
+        <h1><i class="bi bi-grid-3x3-gap me-2"></i>Admin Dashboard</h1>
+        <p>Full platform overview and management controls.</p>
+    </div>
+
+    <!-- =====================================================
+         STATS GRID - Platform wide statistics
+         ===================================================== -->
+    <div class="row g-3 mb-5">
+        <div class="col-sm-6 col-lg-3">
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon bg-primary">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <div class="admin-stat-body">
+                    <span class="admin-stat-number" th:text="${totalStudents}">0</span>
+                    <span class="admin-stat-label">Total Students</span>
+                </div>
+                <a th:href="@{/admin/users(role='STUDENT')}" class="admin-stat-link">
+                    View all <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon bg-success">
+                    <i class="bi bi-person-badge-fill"></i>
+                </div>
+                <div class="admin-stat-body">
+                    <span class="admin-stat-number" th:text="${approvedTutors}">0</span>
+                    <span class="admin-stat-label">Active Tutors</span>
+                    <small th:if="${pendingTutors > 0}" class="text-warning">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span th:text="${pendingTutors}">0</span> pending
+                    </small>
+                </div>
+                <a th:href="@{/admin/tutors}" class="admin-stat-link">
+                    Manage <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon bg-warning">
+                    <i class="bi bi-calendar2-week-fill"></i>
+                </div>
+                <div class="admin-stat-body">
+                    <span class="admin-stat-number" th:text="${totalBookings}">0</span>
+                    <span class="admin-stat-label">Total Bookings</span>
+                    <small th:if="${pendingBookings > 0}" class="text-warning">
+                        <span th:text="${pendingBookings}">0</span> pending
+                    </small>
+                </div>
+                <a th:href="@{/admin/bookings}" class="admin-stat-link">
+                    View all <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon bg-info">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+                <div class="admin-stat-body">
+                    <span class="admin-stat-number" th:text="${totalReviews}">0</span>
+                    <span class="admin-stat-label">Total Reviews</span>
+                </div>
+                <a th:href="@{/admin/reviews}" class="admin-stat-link">
+                    View all <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Second row stats -->
+    <div class="row g-3 mb-5">
+        <div class="col-sm-4">
+            <div class="mini-stat-card">
+                <i class="bi bi-hourglass text-warning"></i>
+                <div>
+                    <strong th:text="${pendingBookings}">0</strong>
+                    <span>Pending Bookings</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="mini-stat-card">
+                <i class="bi bi-check-circle text-success"></i>
+                <div>
+                    <strong th:text="${completedBookings}">0</strong>
+                    <span>Completed Sessions</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="mini-stat-card">
+                <i class="bi bi-calendar-day text-primary"></i>
+                <div>
+                    <strong th:text="${todayBookings}">0</strong>
+                    <span>Today's Bookings</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Pending Tutor Approvals -->
+        <div class="col-lg-6">
+            <div class="card dashboard-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-check me-2"></i>Pending Tutor Approvals
+                        <span class="badge bg-danger ms-2"
+                              th:text="${#lists.size(pendingTutorsList)}">0</span>
+                    </h5>
+                    <a th:href="@{/admin/tutors}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div th:if="${not #lists.isEmpty(pendingTutorsList)}">
+                        <div class="admin-list-item" th:each="tutor : ${pendingTutorsList}">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="mini-avatar">
+                                    <span th:text="${tutor.user.fullName.substring(0,1).toUpperCase()}">T</span>
+                                </div>
+                                <div class="flex-fill">
+                                    <strong th:text="${tutor.user.fullName}">Tutor Name</strong>
+                                    <br><small th:text="${tutor.subjects}" class="text-muted">Subjects</small>
+                                </div>
+                                <!-- Quick approve button -->
+                                <form th:action="@{/admin/tutors/{id}/approve(id=${tutor.id})}"
+                                      method="post">
+                                    <input type="hidden" th:name="${_csrf.parameterName}"
+                                           th:value="${_csrf.token}">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="bi bi-check-lg"></i> Approve
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(pendingTutorsList)}" class="text-center py-4">
+                        <i class="bi bi-check-circle text-success fs-3"></i>
+                        <p class="text-muted mt-2 mb-0">No pending approvals</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Pending Bookings -->
+        <div class="col-lg-6">
+            <div class="card dashboard-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history me-2"></i>New Bookings
+                    </h5>
+                    <a th:href="@{/admin/bookings}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div th:if="${not #lists.isEmpty(recentBookings)}">
+                        <div class="admin-list-item" th:each="booking : ${recentBookings}">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="mini-avatar">
+                                    <span th:text="${booking.studentProfile.user.fullName.substring(0,1).toUpperCase()}">S</span>
+                                </div>
+                                <div class="flex-fill">
+                                    <strong th:text="${booking.studentProfile.user.fullName}">Student</strong>
+                                    → <span th:text="${booking.tutorProfile.user.fullName}" class="text-muted">Tutor</span>
+                                    <br><small th:text="${booking.subject + ' on ' + #temporals.format(booking.bookingDate, 'dd MMM')}" class="text-muted">Details</small>
+                                </div>
+                                <span class="status-badge status-pending">PENDING</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(recentBookings)}" class="text-center py-4">
+                        <i class="bi bi-calendar-check text-success fs-3"></i>
+                        <p class="text-muted mt-2 mb-0">No pending bookings</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card mt-4">
+        <div class="card-header"><h5>Quick Actions</h5></div>
+        <div class="card-body d-flex gap-2 flex-wrap">
+            <a th:href="@{/admin/users/new}" class="btn btn-primary">
+                <i class="bi bi-person-plus me-2"></i>Add User
+            </a>
+            <a th:href="@{/admin/tutors/new}" class="btn btn-success">
+                <i class="bi bi-person-badge me-2"></i>Add Tutor
+            </a>
+            <a th:href="@{/admin/bookings}" class="btn btn-warning text-dark">
+                <i class="bi bi-calendar3 me-2"></i>Manage Bookings
+            </a>
+            <a th:href="@{/admin/reviews}" class="btn btn-info text-white">
+                <i class="bi bi-star me-2"></i>Manage Reviews
+            </a>
+            <a href="/h2-console" target="_blank" class="btn btn-outline-secondary">
+                <i class="bi bi-database me-2"></i>Database Console
+            </a>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{layout/base :: scripts}"></div>
+</body>
+</html>

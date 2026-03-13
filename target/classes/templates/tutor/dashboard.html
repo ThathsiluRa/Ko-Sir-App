@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <head th:replace="~{layout/base :: head}"></head>
+    <title>Tutor Dashboard | Ko-Sir AI</title>
+</head>
+<body>
+<nav th:replace="~{layout/base :: navbar}"></nav>
+<div th:replace="~{layout/base :: flashMessages}"></div>
+
+<div class="container py-4">
+
+    <div class="page-header mb-4">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h1>Tutor Dashboard</h1>
+                <p>Welcome back, <strong th:text="${currentUser.fullName}">Tutor</strong>!</p>
+            </div>
+            <!-- Approval status badge -->
+            <div>
+                <span th:if="${tutorProfile.approved}" class="badge bg-success fs-6">
+                    <i class="bi bi-check-circle me-1"></i>Approved Tutor
+                </span>
+                <span th:if="${!tutorProfile.approved}" class="badge bg-warning text-dark fs-6">
+                    <i class="bi bi-hourglass me-1"></i>Pending Approval
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Approval Warning -->
+    <div th:if="${!tutorProfile.approved}" class="alert alert-warning mb-4">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Your account is pending admin approval.</strong>
+        Students cannot book sessions with you until an admin approves your profile.
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card stat-card-pending">
+                <div class="stat-card-icon"><i class="bi bi-hourglass-split"></i></div>
+                <div class="stat-card-body">
+                    <span class="stat-card-number"
+                          th:text="${#lists.size(pendingBookings)}">0</span>
+                    <span class="stat-card-label">Pending Requests</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card stat-card-confirmed">
+                <div class="stat-card-icon"><i class="bi bi-calendar-check"></i></div>
+                <div class="stat-card-body">
+                    <span class="stat-card-number" th:text="${confirmedCount}">0</span>
+                    <span class="stat-card-label">Confirmed</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card stat-card-completed">
+                <div class="stat-card-icon"><i class="bi bi-check-circle"></i></div>
+                <div class="stat-card-body">
+                    <span class="stat-card-number" th:text="${completedCount}">0</span>
+                    <span class="stat-card-label">Completed</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card stat-card-total">
+                <div class="stat-card-icon"><i class="bi bi-star-fill"></i></div>
+                <div class="stat-card-body">
+                    <span class="stat-card-number" th:text="${tutorProfile.averageRating}">0.0</span>
+                    <span class="stat-card-label">Avg. Rating</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mb-4 d-flex gap-2 flex-wrap">
+        <a th:href="@{/tutor/bookings}" class="btn btn-primary">
+            <i class="bi bi-calendar3 me-2"></i>All Sessions
+        </a>
+        <a th:href="@{/tutor/profile}" class="btn btn-outline-primary">
+            <i class="bi bi-person-gear me-2"></i>Edit Profile
+        </a>
+        <!-- Toggle accepting bookings -->
+        <form th:action="@{/tutor/toggle-availability}" method="post" class="d-inline">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit"
+                    th:class="${tutorProfile.acceptingBookings} ? 'btn btn-outline-warning' : 'btn btn-success'">
+                <i th:class="${tutorProfile.acceptingBookings} ? 'bi bi-pause-circle me-2' : 'bi bi-play-circle me-2'"></i>
+                <span th:text="${tutorProfile.acceptingBookings} ? 'Go Offline' : 'Go Online'">
+                    Toggle
+                </span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Pending Booking Requests (need action) -->
+    <div class="card dashboard-card mb-4" th:if="${not #lists.isEmpty(pendingBookings)}">
+        <div class="card-header pending-header">
+            <h5 class="mb-0">
+                <i class="bi bi-bell me-2"></i>Pending Requests
+                <span class="badge bg-danger ms-2" th:text="${#lists.size(pendingBookings)}">0</span>
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="booking-item" th:each="booking : ${pendingBookings}">
+                <div class="booking-item-header">
+                    <div class="booking-tutor-info">
+                        <div class="mini-avatar">
+                            <span th:text="${booking.studentProfile.user.fullName.substring(0,1).toUpperCase()}">S</span>
+                        </div>
+                        <div>
+                            <strong th:text="${booking.studentProfile.user.fullName}">Student</strong>
+                            <span class="ms-2 text-muted"
+                                  th:text="${booking.subject}">Subject</span>
+                        </div>
+                    </div>
+                    <span class="status-badge status-pending">PENDING</span>
+                </div>
+                <div class="booking-details">
+                    <div class="booking-detail-item">
+                        <i class="bi bi-calendar3"></i>
+                        <span th:text="${#temporals.format(booking.bookingDate, 'EEE, dd MMM yyyy')}">Date</span>
+                    </div>
+                    <div class="booking-detail-item">
+                        <i class="bi bi-clock"></i>
+                        <span th:text="${booking.durationHours + ' hour(s) from ' + #temporals.format(booking.startTime, 'HH:mm')}">Time</span>
+                    </div>
+                    <div class="booking-detail-item">
+                        <i class="bi bi-cash-coin"></i>
+                        <span th:text="'KES ' + ${booking.totalPrice}">Price</span>
+                    </div>
+                </div>
+                <div th:if="${booking.notes != null}" class="booking-status-note">
+                    <i class="bi bi-chat-dots me-1"></i>
+                    <em th:text="${booking.notes}">Notes</em>
+                </div>
+                <!-- Confirm / Reject buttons -->
+                <div class="booking-actions d-flex gap-2">
+                    <form th:action="@{/tutor/bookings/{id}/confirm(id=${booking.id})}"
+                          method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="bi bi-check-lg me-1"></i>Confirm
+                        </button>
+                    </form>
+                    <form th:action="@{/tutor/bookings/{id}/reject(id=${booking.id})}"
+                          method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <input type="text" name="reason" class="form-control form-control-sm"
+                               placeholder="Reason (optional)" style="width:200px;">
+                        <button type="submit" class="btn btn-outline-danger btn-sm ms-1">
+                            <i class="bi bi-x-lg me-1"></i>Decline
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Reviews -->
+    <div class="card dashboard-card" th:if="${not #lists.isEmpty(recentReviews)}">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-star me-2"></i>Recent Reviews</h5>
+        </div>
+        <div class="card-body">
+            <div class="review-item" th:each="review : ${recentReviews}">
+                <div class="review-header">
+                    <strong th:text="${review.student.fullName}">Student</strong>
+                    <div class="review-stars">
+                        <span th:each="i : ${#numbers.sequence(1, review.rating)}">
+                            <i class="bi bi-star-fill text-warning"></i>
+                        </span>
+                    </div>
+                </div>
+                <p class="review-comment" th:text="${review.comment}">Comment</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div th:replace="~{layout/base :: scripts}"></div>
+</body>
+</html>

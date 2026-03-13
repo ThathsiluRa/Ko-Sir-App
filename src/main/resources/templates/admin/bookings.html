@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <head th:replace="~{layout/base :: head}"></head>
+    <title>Manage Bookings | Admin</title>
+</head>
+<body>
+<nav th:replace="~{layout/base :: navbar}"></nav>
+<div th:replace="~{layout/base :: flashMessages}"></div>
+
+<div class="container py-4">
+    <div class="page-header mb-4">
+        <h1><i class="bi bi-calendar2-week me-2"></i>Manage Bookings</h1>
+    </div>
+
+    <!-- Quick Status Stats -->
+    <div class="row g-2 mb-4">
+        <div class="col-sm-4">
+            <a th:href="@{/admin/bookings(status='PENDING')}" class="text-decoration-none">
+                <div class="mini-stat-card">
+                    <i class="bi bi-hourglass text-warning"></i>
+                    <div>
+                        <strong th:text="${pendingCount}">0</strong>
+                        <span>Pending</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-4">
+            <a th:href="@{/admin/bookings(status='CONFIRMED')}" class="text-decoration-none">
+                <div class="mini-stat-card">
+                    <i class="bi bi-calendar-check text-primary"></i>
+                    <div>
+                        <strong th:text="${confirmedCount}">0</strong>
+                        <span>Confirmed</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-4">
+            <a th:href="@{/admin/bookings(status='COMPLETED')}" class="text-decoration-none">
+                <div class="mini-stat-card">
+                    <i class="bi bi-check-circle text-success"></i>
+                    <div>
+                        <strong th:text="${completedCount}">0</strong>
+                        <span>Completed</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs mb-4">
+        <a th:href="@{/admin/bookings}" class="filter-tab"
+           th:classappend="${filterStatus == null} ? 'active' : ''">All</a>
+        <a th:each="status : ${statuses}"
+           th:href="@{/admin/bookings(status=${status.name()})}"
+           th:text="${status}" class="filter-tab"
+           th:classappend="${filterStatus == status} ? 'active' : ''">STATUS</a>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Student</th>
+                            <th>Tutor</th>
+                            <th>Subject</th>
+                            <th>Date & Time</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="booking : ${bookings}">
+                            <td th:text="${booking.id}">1</td>
+                            <td th:text="${booking.studentProfile.user.fullName}">Student</td>
+                            <td th:text="${booking.tutorProfile.user.fullName}">Tutor</td>
+                            <td th:text="${booking.subject}">Subject</td>
+                            <td>
+                                <span th:text="${#temporals.format(booking.bookingDate, 'dd/MM/yy')}">Date</span>
+                                <span th:text="${' ' + #temporals.format(booking.startTime, 'HH:mm')}">Time</span>
+                                <small th:text="${booking.durationHours + 'h'}" class="text-muted">1h</small>
+                            </td>
+                            <td th:text="'LKR ' + ${booking.totalPrice}">Price</td>
+                            <td>
+                                <span class="status-badge"
+                                      th:classappend="${booking.status.name() == 'PENDING'} ? 'status-pending' :
+                                                      (${booking.status.name() == 'CONFIRMED'} ? 'status-confirmed' :
+                                                      (${booking.status.name() == 'COMPLETED'} ? 'status-completed' : 'status-cancelled'))"
+                                      th:text="${booking.status}">STATUS</span>
+                            </td>
+                            <td>
+                                <!-- Admin status change form -->
+                                <form th:action="@{/admin/bookings/{id}/status(id=${booking.id})}"
+                                      method="post" class="d-flex gap-1">
+                                    <input type="hidden" th:name="${_csrf.parameterName}"
+                                           th:value="${_csrf.token}">
+                                    <select name="status" class="form-select form-select-sm"
+                                            style="width: 120px;">
+                                        <option th:each="status : ${statuses}"
+                                                th:value="${status}"
+                                                th:text="${status}"
+                                                th:selected="${booking.status == status}">STATUS</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-save"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:if="${#lists.isEmpty(bookings)}" class="empty-state">
+                <i class="bi bi-calendar-x"></i>
+                <h5>No bookings found</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{layout/base :: scripts}"></div>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <head th:replace="~{layout/base :: head}"></head>
+    <title>Edit Profile | Ko-Sir AI</title>
+</head>
+<body>
+<nav th:replace="~{layout/base :: navbar}"></nav>
+<div th:replace="~{layout/base :: flashMessages}"></div>
+
+<div class="container py-4">
+    <div class="page-header mb-4">
+        <h1><i class="bi bi-person-gear me-2"></i>My Profile</h1>
+        <p>Keep your profile up to date to attract more students.</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Profile Preview Card -->
+        <div class="col-lg-4">
+            <div class="card profile-preview">
+                <div class="card-body text-center">
+                    <div class="tutor-avatar-xl mx-auto mb-3">
+                        <span th:text="${tutorProfile.user.fullName.substring(0,1).toUpperCase()}">T</span>
+                    </div>
+                    <h4 th:text="${tutorProfile.user.fullName}">Name</h4>
+                    <p th:text="${tutorProfile.user.email}" class="text-muted">Email</p>
+                    <div class="d-flex justify-content-center gap-2 flex-wrap mb-3">
+                        <span th:if="${tutorProfile.approved}" class="badge bg-success">
+                            <i class="bi bi-check-circle me-1"></i>Approved
+                        </span>
+                        <span th:if="${!tutorProfile.approved}" class="badge bg-warning text-dark">
+                            Pending Approval
+                        </span>
+                        <span th:if="${tutorProfile.acceptingBookings}" class="badge bg-primary">Online</span>
+                        <span th:if="${!tutorProfile.acceptingBookings}" class="badge bg-secondary">Offline</span>
+                    </div>
+                    <div class="rating-display">
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <strong th:text="${tutorProfile.averageRating}">0.0</strong>
+                        <span th:text="'(' + ${tutorProfile.totalReviews} + ' reviews)'">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Form -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header"><h5>Edit Profile Details</h5></div>
+                <div class="card-body">
+                    <form th:action="@{/tutor/profile}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Subjects You Teach *</label>
+                                <input type="text" name="subjects" class="form-control"
+                                       th:value="${tutorProfile.subjects}"
+                                       placeholder="e.g. Mathematics, Physics" required>
+                                <small class="text-muted">Separate with commas</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Hourly Rate (LKR) *</label>
+                                <input type="number" name="hourlyRate" class="form-control"
+                                       th:value="${tutorProfile.hourlyRate}"
+                                       min="0" step="50" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Years of Experience</label>
+                                <input type="number" name="experienceYears" class="form-control"
+                                       th:value="${tutorProfile.experienceYears}"
+                                       min="0">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Qualification</label>
+                                <input type="text" name="qualification" class="form-control"
+                                       th:value="${tutorProfile.qualification}"
+                                       placeholder="e.g. BSc Mathematics, University of Colombo">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Location / Area</label>
+                                <input type="text" name="location" class="form-control"
+                                       th:value="${tutorProfile.location}"
+                                       placeholder="e.g. Colombo - Nugegoda, Maharagama">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Availability</label>
+                                <input type="text" name="availability" class="form-control"
+                                       th:value="${tutorProfile.availability}"
+                                       placeholder="e.g. Mon-Fri 4pm-8pm">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">About / Bio</label>
+                                <textarea name="bio" rows="4" class="form-control"
+                                          placeholder="Tell students about yourself, your teaching style..."
+                                          th:text="${tutorProfile.bio}"></textarea>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-accent mt-3">
+                            <i class="bi bi-save me-2"></i>Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{layout/base :: scripts}"></div>
+</body>
+</html>

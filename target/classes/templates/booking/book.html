@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <head th:replace="~{layout/base :: head}"></head>
+    <title>Book a Session | Ko-Sir AI</title>
+</head>
+<body>
+<nav th:replace="~{layout/base :: navbar}"></nav>
+<div th:replace="~{layout/base :: flashMessages}"></div>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <a th:href="@{/student/search}" class="btn btn-outline-secondary btn-sm mb-3">
+                <i class="bi bi-arrow-left me-1"></i>Back to Search
+            </a>
+
+            <!-- Tutor Summary Card (shown above the form) -->
+            <div class="tutor-booking-banner mb-4">
+                <div class="tutor-avatar">
+                    <span th:text="${tutor.user.fullName.substring(0,1).toUpperCase()}">T</span>
+                </div>
+                <div class="tutor-booking-info">
+                    <h4 th:text="${tutor.user.fullName}">Tutor Name</h4>
+                    <p th:text="${tutor.subjects}">Subjects</p>
+                    <div class="d-flex align-items-center gap-3">
+                        <span><i class="bi bi-star-fill text-warning me-1"></i>
+                            <span th:text="${tutor.averageRating}">0.0</span>
+                        </span>
+                        <span><i class="bi bi-geo-alt me-1"></i>
+                            <span th:text="${tutor.location}">Location</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="tutor-booking-rate">
+                    <span class="rate-currency">LKR</span>
+                    <span class="rate-amount" th:text="${tutor.hourlyRate}">0</span>
+                    <span class="rate-unit">/hr</span>
+                </div>
+            </div>
+
+            <!-- Booking Form -->
+            <div class="card booking-form-card">
+                <div class="card-header">
+                    <h5><i class="bi bi-calendar-plus me-2"></i>Book Your Session</h5>
+                </div>
+                <div class="card-body">
+
+                    <!--
+                        POST /booking/new
+                        tutorId is passed as a hidden field so the controller knows which tutor.
+                    -->
+                    <form th:action="@{/booking/new}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <input type="hidden" name="tutorId" th:value="${tutor.id}">
+
+                        <div class="row g-3">
+
+                            <!-- Subject Selection -->
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Subject *</label>
+                                <input type="text" name="subject" class="form-control"
+                                       required
+                                       th:placeholder="${'e.g. ' + tutor.subjects.split(',')[0].trim()}"
+                                       placeholder="e.g. Mathematics">
+                                <small class="text-muted">
+                                    Available subjects: <span th:text="${tutor.subjects}">Subjects</span>
+                                </small>
+                            </div>
+
+                            <!-- Session Date -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Session Date *</label>
+                                <input type="date" name="date" class="form-control"
+                                       th:min="${minDate}" required>
+                                <small class="text-muted">
+                                    Available: <span th:text="${tutor.availability}">Availability</span>
+                                </small>
+                            </div>
+
+                            <!-- Start Time -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Start Time *</label>
+                                <input type="time" name="time" class="form-control" required>
+                            </div>
+
+                            <!-- Duration -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Duration *</label>
+                                <select name="duration" class="form-select" required
+                                        id="durationSelect"
+                                        onchange="calculatePrice()">
+                                    <!--
+                                        th:each loops over the duration options array (1, 2, 3)
+                                        th:value and th:text use the loop variable directly
+                                    -->
+                                    <option th:each="d : ${durationOptions}"
+                                            th:value="${d}"
+                                            th:text="${d + (d == 1 ? ' hour' : ' hours')}">
+                                        1 hour
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Price Preview (calculated by JavaScript) -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Total Price</label>
+                                <div class="price-preview" id="pricePreview">
+                                    LKR <span id="priceAmount" th:text="${tutor.hourlyRate}">0</span>
+                                </div>
+                                <small class="text-muted">
+                                    Rate: LKR <span th:text="${tutor.hourlyRate}"
+                                                     id="hourlyRate">0</span>/hr
+                                </small>
+                            </div>
+
+                            <!-- Special Notes -->
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">
+                                    Special Notes <small class="text-muted">(optional)</small>
+                                </label>
+                                <textarea name="notes" rows="3" class="form-control"
+                                          placeholder="e.g. Please focus on algebra equations for my upcoming exam..."></textarea>
+                            </div>
+
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-accent btn-lg flex-fill">
+                                <i class="bi bi-lock-fill me-2"></i>Continue to Payment
+                            </button>
+                            <a th:href="@{/student/search}" class="btn btn-outline-secondary btn-lg">
+                                Cancel
+                            </a>
+                        </div>
+
+                        <p class="text-muted text-center mt-3 small">
+                            <i class="bi bi-shield-lock me-1"></i>
+                            Next step: secure payment. Tutor is notified only after payment is received.
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{layout/base :: scripts}"></div>
+
+<script>
+/**
+ * Calculates the total booking price when duration changes.
+ * Price = hourly rate × duration (hours)
+ */
+function calculatePrice() {
+    const hourlyRate = parseFloat(document.getElementById('hourlyRate').textContent);
+    const duration = parseInt(document.getElementById('durationSelect').value);
+    const total = hourlyRate * duration;
+    document.getElementById('priceAmount').textContent = total.toFixed(2);
+}
+</script>
+
+</body>
+</html>

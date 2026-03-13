@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <head th:replace="~{layout/base :: head}"></head>
+    <title>Edit Profile | Ko-Sir AI</title>
+</head>
+<body>
+<nav th:replace="~{layout/base :: navbar}"></nav>
+<div th:replace="~{layout/base :: flashMessages}"></div>
+
+<div class="container py-4">
+    <div class="page-header mb-4">
+        <h1><i class="bi bi-person-gear me-2"></i>My Profile</h1>
+        <p>Keep your profile up to date to attract more students.</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Profile Preview Card -->
+        <div class="col-lg-4">
+            <div class="card profile-preview">
+                <div class="card-body text-center">
+                    <div class="tutor-avatar-xl mx-auto mb-3">
+                        <span th:text="${tutorProfile.user.fullName.substring(0,1).toUpperCase()}">T</span>
+                    </div>
+                    <h4 th:text="${tutorProfile.user.fullName}">Name</h4>
+                    <p th:text="${tutorProfile.user.email}" class="text-muted">Email</p>
+                    <div class="d-flex justify-content-center gap-2 flex-wrap mb-3">
+                        <span th:if="${tutorProfile.approved}" class="badge bg-success">
+                            <i class="bi bi-check-circle me-1"></i>Approved
+                        </span>
+                        <span th:if="${!tutorProfile.approved}" class="badge bg-warning text-dark">
+                            Pending Approval
+                        </span>
+                        <span th:if="${tutorProfile.acceptingBookings}" class="badge bg-primary">Online</span>
+                        <span th:if="${!tutorProfile.acceptingBookings}" class="badge bg-secondary">Offline</span>
+                    </div>
+                    <div class="rating-display">
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <strong th:text="${tutorProfile.averageRating}">0.0</strong>
+                        <span th:text="'(' + ${tutorProfile.totalReviews} + ' reviews)'">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Form -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header"><h5>Edit Profile Details</h5></div>
+                <div class="card-body">
+                    <form th:action="@{/tutor/profile}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Subjects You Teach *</label>
+                                <input type="text" name="subjects" class="form-control"
+                                       th:value="${tutorProfile.subjects}"
+                                       placeholder="e.g. Mathematics, Physics" required>
+                                <small class="text-muted">Separate with commas</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Hourly Rate (LKR) *</label>
+                                <input type="number" name="hourlyRate" class="form-control"
+                                       th:value="${tutorProfile.hourlyRate}"
+                                       min="0" step="50" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Years of Experience</label>
+                                <input type="number" name="experienceYears" class="form-control"
+                                       th:value="${tutorProfile.experienceYears}"
+                                       min="0">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Qualification</label>
+                                <input type="text" name="qualification" class="form-control"
+                                       th:value="${tutorProfile.qualification}"
+                                       placeholder="e.g. BSc Mathematics, University of Colombo">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Location / Area</label>
+                                <input type="text" name="location" class="form-control"
+                                       th:value="${tutorProfile.location}"
+                                       placeholder="e.g. Colombo — Nugegoda, Maharagama">
+                                <small class="text-muted">General area shown on your public profile for search.</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Availability</label>
+                                <input type="text" name="availability" class="form-control"
+                                       th:value="${tutorProfile.availability}"
+                                       placeholder="e.g. Mon-Fri 4pm-8pm, Weekends 9am-5pm">
+                            </div>
+
+                            <!-- ── TEACHING MODE ─────────────────────────── -->
+                            <div class="col-12">
+                                <hr style="border-color:var(--border);margin:0.5rem 0;">
+                                <label class="form-label fw-semibold">How do you deliver sessions? *</label>
+                                <div class="row g-2 mt-1" id="teachingModeCards">
+
+                                    <!-- Home Visit -->
+                                    <div class="col-md-4">
+                                        <label class="d-block" style="cursor:pointer;">
+                                            <input type="radio" name="teachingMode" value="HOME_VISIT"
+                                                   class="d-none teaching-mode-radio"
+                                                   th:checked="${tutorProfile.teachingMode == null or tutorProfile.teachingMode == 'HOME_VISIT'}"
+                                                   onchange="updateTeachingModeUI()">
+                                            <div class="teaching-mode-card" id="card-HOME_VISIT"
+                                                 style="border:2px solid var(--border);border-radius:14px;padding:1.1rem;text-align:center;transition:all 0.2s;">
+                                                <i class="bi bi-house-door-fill" style="font-size:1.5rem;color:var(--green-mid);"></i>
+                                                <div class="fw-semibold mt-1" style="font-size:0.9rem;">Home Visit</div>
+                                                <small class="text-muted" style="font-size:0.75rem;">I travel to the student's home</small>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <!-- Fixed Location -->
+                                    <div class="col-md-4">
+                                        <label class="d-block" style="cursor:pointer;">
+                                            <input type="radio" name="teachingMode" value="FIXED_LOCATION"
+                                                   class="d-none teaching-mode-radio"
+                                                   th:checked="${tutorProfile.teachingMode == 'FIXED_LOCATION'}"
+                                                   onchange="updateTeachingModeUI()">
+                                            <div class="teaching-mode-card" id="card-FIXED_LOCATION"
+                                                 style="border:2px solid var(--border);border-radius:14px;padding:1.1rem;text-align:center;transition:all 0.2s;">
+                                                <i class="bi bi-building" style="font-size:1.5rem;color:var(--green-mid);"></i>
+                                                <div class="fw-semibold mt-1" style="font-size:0.9rem;">My Place</div>
+                                                <small class="text-muted" style="font-size:0.75rem;">Student comes to my location</small>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <!-- Both -->
+                                    <div class="col-md-4">
+                                        <label class="d-block" style="cursor:pointer;">
+                                            <input type="radio" name="teachingMode" value="BOTH"
+                                                   class="d-none teaching-mode-radio"
+                                                   th:checked="${tutorProfile.teachingMode == 'BOTH'}"
+                                                   onchange="updateTeachingModeUI()">
+                                            <div class="teaching-mode-card" id="card-BOTH"
+                                                 style="border:2px solid var(--border);border-radius:14px;padding:1.1rem;text-align:center;transition:all 0.2s;">
+                                                <i class="bi bi-arrow-left-right" style="font-size:1.5rem;color:var(--green-mid);"></i>
+                                                <div class="fw-semibold mt-1" style="font-size:0.9rem;">Both Options</div>
+                                                <small class="text-muted" style="font-size:0.75rem;">Student chooses at booking</small>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Teaching Address — shown only for FIXED_LOCATION and BOTH -->
+                            <div class="col-12" id="teachingAddressRow"
+                                 th:style="${tutorProfile.teachingMode == 'HOME_VISIT' or tutorProfile.teachingMode == null ? 'display:none' : ''}">
+                                <label class="form-label">
+                                    Your Teaching Location Address *
+                                    <span class="text-muted fw-normal" style="font-size:0.8rem;">
+                                        — shown to students so they know where to come
+                                    </span>
+                                </label>
+                                <input type="text" name="teachingAddress" class="form-control"
+                                       id="teachingAddressInput"
+                                       th:value="${tutorProfile.teachingAddress}"
+                                       placeholder="e.g. 123 Galle Road, Colombo 03 (near Unity Plaza)">
+                                <small class="text-muted">Be as specific as possible — include landmarks if helpful.</small>
+                            </div>
+                            <!-- ── END TEACHING MODE ─────────────────────── -->
+
+                            <div class="col-12">
+                                <label class="form-label">About / Bio</label>
+                                <textarea name="bio" rows="4" class="form-control"
+                                          placeholder="Tell students about yourself, your teaching style..."
+                                          th:text="${tutorProfile.bio}"></textarea>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-accent mt-3">
+                            <i class="bi bi-save me-2"></i>Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{layout/base :: scripts}"></div>
+<script>
+function updateTeachingModeUI() {
+    const radios = document.querySelectorAll('.teaching-mode-radio');
+    let selectedValue = 'HOME_VISIT';
+    radios.forEach(r => {
+        const card = document.getElementById('card-' + r.value);
+        if (r.checked) {
+            selectedValue = r.value;
+            card.style.borderColor = 'var(--green-mid)';
+            card.style.background = 'rgba(21,92,69,0.06)';
+        } else {
+            card.style.borderColor = 'var(--border)';
+            card.style.background = '';
+        }
+    });
+    const addressRow = document.getElementById('teachingAddressRow');
+    addressRow.style.display = (selectedValue === 'HOME_VISIT') ? 'none' : '';
+}
+// Run on page load to set initial state
+updateTeachingModeUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <head th:replace="~{layout/base :: head}"></head>
+    <title>Book a Session | Ko-Sir AI</title>
+</head>
+<body>
+<nav th:replace="~{layout/base :: navbar}"></nav>
+<div th:replace="~{layout/base :: flashMessages}"></div>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <a th:href="@{/student/search}" class="btn btn-outline-secondary btn-sm mb-3">
+                <i class="bi bi-arrow-left me-1"></i>Back to Search
+            </a>
+
+            <!-- Tutor Summary Card (shown above the form) -->
+            <div class="tutor-booking-banner mb-4">
+                <div class="tutor-avatar">
+                    <span th:text="${tutor.user.fullName.substring(0,1).toUpperCase()}">T</span>
+                </div>
+                <div class="tutor-booking-info">
+                    <h4 th:text="${tutor.user.fullName}">Tutor Name</h4>
+                    <p th:text="${tutor.subjects}">Subjects</p>
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <span><i class="bi bi-star-fill text-warning me-1"></i>
+                            <span th:text="${tutor.averageRating}">0.0</span>
+                        </span>
+                        <span><i class="bi bi-geo-alt me-1"></i>
+                            <span th:text="${tutor.location}">Location</span>
+                        </span>
+                        <span th:if="${teachingMode == 'HOME_VISIT'}"
+                              style="background:rgba(21,92,69,0.12);color:var(--green-deep);padding:2px 10px;border-radius:20px;font-size:0.78rem;font-weight:600;">
+                            <i class="bi bi-house-door me-1"></i>Home Visit
+                        </span>
+                        <span th:if="${teachingMode == 'FIXED_LOCATION'}"
+                              style="background:rgba(244,161,10,0.12);color:#b87a00;padding:2px 10px;border-radius:20px;font-size:0.78rem;font-weight:600;">
+                            <i class="bi bi-building me-1"></i>Fixed Location
+                        </span>
+                        <span th:if="${teachingMode == 'BOTH'}"
+                              style="background:rgba(59,130,246,0.1);color:#1d4ed8;padding:2px 10px;border-radius:20px;font-size:0.78rem;font-weight:600;">
+                            <i class="bi bi-arrow-left-right me-1"></i>Home or Fixed
+                        </span>
+                    </div>
+                </div>
+                <div class="tutor-booking-rate">
+                    <span class="rate-currency">LKR</span>
+                    <span class="rate-amount" th:text="${tutor.hourlyRate}">0</span>
+                    <span class="rate-unit">/hr</span>
+                </div>
+            </div>
+
+            <!-- Booking Form -->
+            <div class="card booking-form-card">
+                <div class="card-header">
+                    <h5><i class="bi bi-calendar-plus me-2"></i>Book Your Session</h5>
+                </div>
+                <div class="card-body">
+
+                    <!--
+                        POST /booking/new
+                        tutorId is passed as a hidden field so the controller knows which tutor.
+                    -->
+                    <form th:action="@{/booking/new}" method="post"
+                          th:data-tutor-address="${tutor.teachingAddress}"
+                          data-tutor-address="">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <input type="hidden" name="tutorId" th:value="${tutor.id}">
+
+                        <div class="row g-3">
+
+                            <!-- Subject Selection -->
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Subject *</label>
+                                <input type="text" name="subject" class="form-control"
+                                       required
+                                       th:placeholder="${'e.g. ' + tutor.subjects.split(',')[0].trim()}"
+                                       placeholder="e.g. Mathematics">
+                                <small class="text-muted">
+                                    Available subjects: <span th:text="${tutor.subjects}">Subjects</span>
+                                </small>
+                            </div>
+
+                            <!-- Session Date -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Session Date *</label>
+                                <input type="date" name="date" class="form-control"
+                                       th:min="${minDate}" required>
+                                <small class="text-muted">
+                                    Available: <span th:text="${tutor.availability}">Availability</span>
+                                </small>
+                            </div>
+
+                            <!-- Start Time -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Start Time *</label>
+                                <input type="time" name="time" class="form-control" required>
+                            </div>
+
+                            <!-- Duration -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Duration *</label>
+                                <select name="duration" class="form-select" required
+                                        id="durationSelect"
+                                        onchange="calculatePrice()">
+                                    <!--
+                                        th:each loops over the duration options array (1, 2, 3)
+                                        th:value and th:text use the loop variable directly
+                                    -->
+                                    <option th:each="d : ${durationOptions}"
+                                            th:value="${d}"
+                                            th:text="${d + (d == 1 ? ' hour' : ' hours')}">
+                                        1 hour
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Price Preview (calculated by JavaScript) -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Total Price</label>
+                                <div class="price-preview" id="pricePreview">
+                                    LKR <span id="priceAmount" th:text="${tutor.hourlyRate}">0</span>
+                                </div>
+                                <small class="text-muted">
+                                    Rate: LKR <span th:text="${tutor.hourlyRate}"
+                                                     id="hourlyRate">0</span>/hr
+                                </small>
+                            </div>
+
+                            <!-- ── SESSION LOCATION ─────────────────────── -->
+
+                            <!--
+                                HOME_VISIT: tutor comes to student → student provides their home address.
+                                FIXED_LOCATION: student comes to tutor → show tutor's address (read-only).
+                                BOTH: student picks, then enters their address OR sees tutor's address.
+                            -->
+
+                            <!-- FIXED_LOCATION: read-only info box showing tutor's address -->
+                            <div class="col-12" th:if="${teachingMode == 'FIXED_LOCATION'}">
+                                <div style="background:rgba(244,161,10,0.08);border:1.5px solid var(--gold);border-radius:12px;padding:1rem;">
+                                    <div class="fw-semibold mb-1" style="font-size:0.9rem;">
+                                        <i class="bi bi-building me-1" style="color:var(--gold);"></i>
+                                        Session Location — Tutor's Place
+                                    </div>
+                                    <div th:text="${tutor.teachingAddress}" style="font-size:0.9rem;color:var(--green-deep);">Address</div>
+                                    <small class="text-muted">You will need to travel to this location for the session.</small>
+                                    <!-- Hidden field: pre-filled with tutor's address -->
+                                    <input type="hidden" name="sessionLocation" th:value="${tutor.teachingAddress}">
+                                </div>
+                            </div>
+
+                            <!-- BOTH: let student pick mode, then show relevant field -->
+                            <div class="col-12" th:if="${teachingMode == 'BOTH'}">
+                                <label class="form-label fw-semibold">Where do you want the session? *</label>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <label class="d-block" style="cursor:pointer;">
+                                            <input type="radio" name="sessionTypeChoice" value="home"
+                                                   class="d-none" checked onchange="toggleSessionType()">
+                                            <div id="choice-home"
+                                                 style="border:2px solid var(--green-mid);background:rgba(21,92,69,0.06);border-radius:12px;padding:0.9rem;text-align:center;transition:all 0.2s;">
+                                                <i class="bi bi-house-door-fill" style="color:var(--green-mid);font-size:1.3rem;"></i>
+                                                <div class="fw-semibold mt-1" style="font-size:0.85rem;">Tutor comes to me</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="d-block" style="cursor:pointer;">
+                                            <input type="radio" name="sessionTypeChoice" value="fixed"
+                                                   class="d-none" onchange="toggleSessionType()">
+                                            <div id="choice-fixed"
+                                                 style="border:2px solid var(--border);border-radius:12px;padding:0.9rem;text-align:center;transition:all 0.2s;">
+                                                <i class="bi bi-building" style="color:var(--green-mid);font-size:1.3rem;"></i>
+                                                <div class="fw-semibold mt-1" style="font-size:0.85rem;">I go to tutor's place</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Home address input (default) -->
+                                <div id="section-home">
+                                    <label class="form-label fw-semibold">Your Home Address *</label>
+                                    <input type="text" id="sessionLocationHome" class="form-control"
+                                           placeholder="e.g. 45/B Baseline Road, Colombo 08"
+                                           oninput="syncLocation(this.value)">
+                                    <small class="text-muted">Tutor will travel to this address. Include landmarks if helpful.</small>
+                                    <input type="hidden" name="sessionLocation" id="sessionLocationField" value="">
+                                </div>
+
+                                <!-- Tutor's fixed address (shown when "I go to tutor's place") -->
+                                <div id="section-fixed" style="display:none;">
+                                    <div style="background:rgba(244,161,10,0.08);border:1.5px solid var(--gold);border-radius:12px;padding:1rem;">
+                                        <div class="fw-semibold mb-1" style="font-size:0.9rem;">
+                                            <i class="bi bi-building me-1" style="color:var(--gold);"></i>Tutor's Location
+                                        </div>
+                                        <div th:text="${tutor.teachingAddress}" style="color:var(--green-deep);font-size:0.9rem;">Address</div>
+                                        <small class="text-muted">You will travel to this address.</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- HOME_VISIT: student must provide their home address -->
+                            <div class="col-12" th:if="${teachingMode == 'HOME_VISIT' or teachingMode == null}">
+                                <label class="form-label fw-semibold">
+                                    Your Home Address *
+                                </label>
+                                <input type="text" name="sessionLocation" class="form-control"
+                                       required
+                                       placeholder="e.g. 45/B Baseline Road, Colombo 08">
+                                <small class="text-muted">
+                                    <i class="bi bi-house-door me-1"></i>
+                                    The tutor will travel to this address. Be specific — include your street, house number, and a nearby landmark.
+                                </small>
+                            </div>
+
+                            <!-- ── END SESSION LOCATION ──────────────────── -->
+
+                            <!-- Special Notes -->
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">
+                                    Special Notes <small class="text-muted">(optional)</small>
+                                </label>
+                                <textarea name="notes" rows="3" class="form-control"
+                                          placeholder="e.g. Please focus on algebra equations for my upcoming exam..."></textarea>
+                            </div>
+
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-accent btn-lg flex-fill">
+                                <i class="bi bi-lock-fill me-2"></i>Continue to Payment
+                            </button>
+                            <a th:href="@{/student/search}" class="btn btn-outline-secondary btn-lg">
+                                Cancel
+                            </a>
+                        </div>
+
+                        <p class="text-muted text-center mt-3 small">
+                            <i class="bi bi-shield-lock me-1"></i>
+                            Next step: secure payment. Tutor is notified only after payment is received.
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{layout/base :: scripts}"></div>
+
+<script>
+function calculatePrice() {
+    const hourlyRate = parseFloat(document.getElementById('hourlyRate').textContent);
+    const duration = parseInt(document.getElementById('durationSelect').value);
+    const total = hourlyRate * duration;
+    document.getElementById('priceAmount').textContent = total.toFixed(2);
+}
+
+/**
+ * For BOTH mode: toggle between "tutor comes to me" and "I go to tutor's place"
+ */
+function toggleSessionType() {
+    const radios = document.querySelectorAll('[name="sessionTypeChoice"]');
+    let choice = 'home';
+    radios.forEach(r => { if (r.checked) choice = r.value; });
+
+    const homeSection  = document.getElementById('section-home');
+    const fixedSection = document.getElementById('section-fixed');
+    const choiceHome   = document.getElementById('choice-home');
+    const choiceFixed  = document.getElementById('choice-fixed');
+    const hiddenField  = document.getElementById('sessionLocationField');
+    const homeInput    = document.getElementById('sessionLocationHome');
+
+    if (choice === 'home') {
+        homeSection.style.display  = '';
+        fixedSection.style.display = 'none';
+        choiceHome.style.borderColor  = 'var(--green-mid)';
+        choiceHome.style.background   = 'rgba(21,92,69,0.06)';
+        choiceFixed.style.borderColor = 'var(--border)';
+        choiceFixed.style.background  = '';
+        hiddenField.value = homeInput ? homeInput.value : '';
+        if (homeInput) homeInput.required = true;
+    } else {
+        homeSection.style.display  = 'none';
+        fixedSection.style.display = '';
+        choiceFixed.style.borderColor = 'var(--gold)';
+        choiceFixed.style.background  = 'rgba(244,161,10,0.06)';
+        choiceHome.style.borderColor  = 'var(--border)';
+        choiceHome.style.background   = '';
+        // Use tutor's fixed address (set as data attribute)
+        hiddenField.value = document.querySelector('[data-tutor-address]')?.dataset.tutorAddress || '';
+        if (homeInput) homeInput.required = false;
+    }
+}
+
+function syncLocation(val) {
+    const f = document.getElementById('sessionLocationField');
+    if (f) f.value = val;
+}
+</script>
+
+</body>
+</html>

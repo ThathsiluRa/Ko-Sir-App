@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- =====================================================
+         SPRING BOOT PARENT
+         Manages all dependency versions automatically.
+         You don't need to specify versions for Spring libs.
+         ===================================================== -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.3</version>
+        <relativePath/>
+    </parent>
+
+    <!-- Project identity -->
+    <groupId>com.tutorplatform</groupId>
+    <artifactId>tutor-booking-platform</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>tutor-booking-platform</name>
+    <description>Home Tutor Booking Platform - Ko-Sir AI</description>
+
+    <properties>
+        <!-- We use Java 17 (LTS, required for Spring Boot 3.x) -->
+        <java.version>17</java.version>
+    </properties>
+
+    <dependencies>
+
+        <!-- =====================================================
+             SPRING WEB
+             Gives us @Controller, @RestController, HTTP handling,
+             MVC pattern (Model-View-Controller), and embedded Tomcat.
+             ===================================================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- =====================================================
+             THYMELEAF TEMPLATE ENGINE
+             Lets us write HTML files with dynamic data from Java.
+             Syntax: th:text, th:if, th:each, th:href, etc.
+             Files go in: src/main/resources/templates/
+             ===================================================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
+        <!-- =====================================================
+             SPRING SECURITY
+             Handles authentication (login/logout) and authorization
+             (who can access what pages). We configure this in
+             SecurityConfig.java using role-based access.
+             ===================================================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- =====================================================
+             THYMELEAF + SPRING SECURITY INTEGRATION
+             Allows HTML templates to check user roles and auth state.
+             Usage: sec:authorize="hasRole('ADMIN')" in HTML
+             ===================================================== -->
+        <dependency>
+            <groupId>org.thymeleaf.extras</groupId>
+            <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+        </dependency>
+
+        <!-- =====================================================
+             SPRING DATA JPA
+             Object-Relational Mapping (ORM) layer.
+             Maps Java classes (entities) to database tables.
+             Gives us JpaRepository with save(), findById(), etc.
+             Uses Hibernate under the hood.
+             ===================================================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- =====================================================
+             H2 DATABASE (IN-MEMORY)
+             A lightweight database that runs inside the app.
+             Perfect for development - no setup needed!
+             Data is reset every time the app restarts.
+             To switch to MySQL later, replace this with the
+             MySQL connector and update application.properties.
+             ===================================================== -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- =====================================================
+             VALIDATION
+             Lets us validate form input with annotations:
+             @NotBlank, @Email, @Size, @Min, @Max, etc.
+             Works with @Valid in controllers.
+             ===================================================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- =====================================================
+             DEV TOOLS
+             Auto-restarts the application when you change code.
+             Only active during development (scope=runtime, optional).
+             ===================================================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- =====================================================
+             SPRING BOOT MAIL
+             Provides JavaMailSender / JavaMailSenderImpl for sending
+             emails via SMTP. We use this in EmailService.java to
+             dynamically create a mail sender from PlatformSettings.
+             Also pulls in the javax.mail (Jakarta Mail) API.
+             ===================================================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        <!-- =====================================================
+             TWILIO SDK
+             Official Java SDK for sending SMS via Twilio.
+             Used by SmsService.java when smsProvider = "TWILIO".
+             We pin to a stable 9.x release that is Java 17 compatible.
+             ===================================================== -->
+        <dependency>
+            <groupId>com.twilio.sdk</groupId>
+            <artifactId>twilio</artifactId>
+            <version>9.14.1</version>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Spring Boot Maven Plugin: allows "mvn spring-boot:run" -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

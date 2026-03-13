@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<!--
+    HOME PAGE (PUBLIC LANDING PAGE)
+    =====================================================
+    The first page visitors see. Designed to:
+    - Explain what the platform does
+    - Show featured tutors
+    - Drive registrations (CTA buttons)
+
+    Thymeleaf syntax used here:
+    - th:replace → import a fragment from another file
+    - th:each   → loop over a list
+    - th:text   → display variable text
+    - th:href   → dynamic links with @{/url}
+    =====================================================
+-->
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <!-- Import the shared head fragment (Bootstrap, fonts, CSS) -->
+    <head th:replace="~{layout/base :: head}"></head>
+    <title>Ko-Sir AI | Expert Home Tutors</title>
+</head>
+
+<body>
+
+<!-- Import the shared navbar -->
+<nav th:replace="~{layout/base :: navbar}"></nav>
+
+<!-- =====================================================
+     HERO SECTION
+     The big attention-grabbing banner at the top.
+     ===================================================== -->
+<section class="hero-section">
+    <div class="hero-bg-pattern"></div>
+    <div class="container">
+        <div class="row align-items-center min-vh-80">
+            <div class="col-lg-6 hero-content">
+                <div class="hero-badge">
+                    <i class="bi bi-award-fill"></i> Trusted Tutoring Platform
+                </div>
+                <h1 class="hero-title">
+                    Find Your Perfect<br>
+                    <span class="text-accent">Home Tutor</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Connect with qualified, vetted tutors for personalized
+                    one-on-one learning sessions — in the comfort of your home.
+                </p>
+                <div class="hero-stats d-flex gap-4 my-4">
+                    <div class="stat-item">
+                        <span class="stat-number" th:text="${totalTutors} ?: '10+'">10+</span>
+                        <span class="stat-label">Expert Tutors</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">100+</span>
+                        <span class="stat-label">Sessions Booked</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">4.8★</span>
+                        <span class="stat-label">Avg. Rating</span>
+                    </div>
+                </div>
+                <div class="hero-cta d-flex gap-3 flex-wrap">
+                    <!-- Show "Find a Tutor" for students, or login if not authenticated -->
+                    <a th:href="@{/student/search}" sec:authorize="hasRole('STUDENT')"
+                       class="btn btn-accent btn-lg">
+                        <i class="bi bi-search me-2"></i>Find a Tutor
+                    </a>
+                    <a th:href="@{/register}" sec:authorize="isAnonymous()"
+                       class="btn btn-accent btn-lg">
+                        <i class="bi bi-person-plus me-2"></i>Get Started Free
+                    </a>
+                    <a th:href="@{/login}" sec:authorize="isAnonymous()"
+                       class="btn btn-outline-light btn-lg">
+                        Sign In
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-flex justify-content-center">
+                <div class="hero-illustration">
+                    <div class="hero-card floating-card-1">
+                        <i class="bi bi-book-fill"></i>
+                        <span>Mathematics</span>
+                    </div>
+                    <div class="hero-icon-main">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </div>
+                    <div class="hero-card floating-card-2">
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <span>Top Rated</span>
+                    </div>
+                    <div class="hero-card floating-card-3">
+                        <i class="bi bi-calendar-check-fill text-success"></i>
+                        <span>Easy Booking</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =====================================================
+     HOW IT WORKS SECTION
+     3-step process explanation.
+     ===================================================== -->
+<section class="section-padding bg-cream">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <p class="section-tag">Simple Process</p>
+            <h2 class="section-title">How It Works</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="step-card text-center">
+                    <div class="step-number">01</div>
+                    <div class="step-icon">
+                        <i class="bi bi-person-plus-fill"></i>
+                    </div>
+                    <h4>Create an Account</h4>
+                    <p>Sign up as a student in minutes. Share your learning goals and grade level.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="step-card text-center">
+                    <div class="step-number">02</div>
+                    <div class="step-icon">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <h4>Find Your Tutor</h4>
+                    <p>Browse verified tutors by subject, location, or price. Read real reviews.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="step-card text-center">
+                    <div class="step-number">03</div>
+                    <div class="step-icon">
+                        <i class="bi bi-calendar-check-fill"></i>
+                    </div>
+                    <h4>Book &amp; Learn</h4>
+                    <p>Book a session, get confirmed, and start learning in your own home!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =====================================================
+     FEATURED TUTORS SECTION
+     Shows 3 top tutors as preview cards.
+     th:each loops over the featuredTutors list.
+     ===================================================== -->
+<section class="section-padding">
+    <div class="container">
+        <div class="section-header d-flex justify-content-between align-items-end mb-5">
+            <div>
+                <p class="section-tag">Our Tutors</p>
+                <h2 class="section-title">Featured Tutors</h2>
+            </div>
+            <a th:href="@{/student/search}" sec:authorize="hasRole('STUDENT')"
+               class="btn btn-outline-primary">
+                View All Tutors <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        <div class="row g-4">
+            <!--
+                th:each="tutor : ${featuredTutors}"
+                Loops through the list of tutors passed from HomeController.
+                "tutor" is the variable name for each item in the loop.
+            -->
+            <div class="col-md-4" th:each="tutor : ${featuredTutors}">
+                <div class="tutor-card">
+                    <!-- Tutor Avatar (initials) -->
+                    <div class="tutor-avatar-lg">
+                        <!-- th:text gets the first letter of the tutor's name -->
+                        <span th:text="${tutor.user.fullName.substring(0,1).toUpperCase()}">T</span>
+                    </div>
+                    <div class="tutor-card-body">
+                        <!-- Tutor Name: th:text displays the variable value -->
+                        <h5 th:text="${tutor.user.fullName}">Tutor Name</h5>
+
+                        <!-- Subjects: displayed as a badge pill -->
+                        <p class="tutor-subjects">
+                            <i class="bi bi-book me-1"></i>
+                            <span th:text="${tutor.subjects}">Subjects</span>
+                        </p>
+
+                        <!-- Location -->
+                        <p class="tutor-location">
+                            <i class="bi bi-geo-alt me-1"></i>
+                            <span th:text="${tutor.location}">Location</span>
+                        </p>
+
+                        <!-- Rating Stars -->
+                        <div class="tutor-rating">
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <span th:text="${tutor.averageRating}">0.0</span>
+                            <small th:text="'(' + ${tutor.totalReviews} + ' reviews)'">
+                                (0 reviews)
+                            </small>
+                        </div>
+
+                        <!-- Price + Book button -->
+                        <div class="tutor-card-footer">
+                            <span class="tutor-rate">
+                                LKR <span th:text="${tutor.hourlyRate}">0</span>/hr
+                            </span>
+                            <a th:href="@{/booking/new(tutorId=${tutor.id})}"
+                               sec:authorize="hasRole('STUDENT')"
+                               class="btn btn-accent btn-sm">
+                                Book Session
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Show a message if no tutors are available yet -->
+            <div class="col-12 text-center py-4"
+                 th:if="${#lists.isEmpty(featuredTutors)}">
+                <p class="text-muted">No tutors available yet. Check back soon!</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =====================================================
+     SUBJECTS SECTION
+     Shows what subjects are available.
+     ===================================================== -->
+<section class="section-padding bg-cream">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <p class="section-tag">Subjects</p>
+            <h2 class="section-title">We Cover It All</h2>
+        </div>
+        <div class="subjects-grid">
+            <div class="subject-pill"><i class="bi bi-calculator"></i> Mathematics</div>
+            <div class="subject-pill"><i class="bi bi-lightning"></i> Physics</div>
+            <div class="subject-pill"><i class="bi bi-droplet"></i> Chemistry</div>
+            <div class="subject-pill"><i class="bi bi-tree"></i> Biology</div>
+            <div class="subject-pill"><i class="bi bi-translate"></i> English</div>
+            <div class="subject-pill"><i class="bi bi-globe"></i> Sinhala</div>
+            <div class="subject-pill"><i class="bi bi-book"></i> History</div>
+            <div class="subject-pill"><i class="bi bi-cpu"></i> Computer Studies</div>
+        </div>
+    </div>
+</section>
+
+<!-- =====================================================
+     CALL TO ACTION SECTION (bottom of page)
+     ===================================================== -->
+<section class="cta-section" sec:authorize="isAnonymous()">
+    <div class="container text-center">
+        <h2>Ready to Start Learning?</h2>
+        <p>Connect with Sri Lanka's best verified home tutors — Colombo, Kandy, Galle &amp; beyond</p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap mt-4">
+            <a th:href="@{/register(role='STUDENT')}" class="btn btn-light btn-lg">
+                <i class="bi bi-person-plus me-2"></i>Register as Student
+            </a>
+            <a th:href="@{/register(role='TUTOR')}" class="btn btn-outline-light btn-lg">
+                <i class="bi bi-person-badge me-2"></i>Become a Tutor
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="site-footer">
+    <div class="container text-center">
+        <p>
+            <span class="brand-footer">Ko-Sir<span class="brand-accent">AI</span></span> &copy; 2025 |
+            Home Tutor Booking Platform
+        </p>
+    </div>
+</footer>
+
+<!-- Import the shared scripts fragment -->
+<div th:replace="~{layout/base :: scripts}"></div>
+
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <head th:replace="~{layout/base :: head}"></head>
+    <title>Find Tutors | Ko-Sir AI</title>
+</head>
+<body>
+<nav th:replace="~{layout/base :: navbar}"></nav>
+<div th:replace="~{layout/base :: flashMessages}"></div>
+
+<div class="container py-4">
+
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h1><i class="bi bi-search me-2"></i>Find a Tutor</h1>
+        <p>Search from our pool of verified, qualified tutors.</p>
+    </div>
+
+    <!-- =====================================================
+         SEARCH BAR
+         GET form - submits ?keyword=... to the same URL.
+         ===================================================== -->
+    <div class="search-bar-container mb-4">
+        <form method="get" th:action="@{/student/search}" class="search-form">
+            <div class="input-group input-group-lg search-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" name="keyword" class="form-control"
+                       th:value="${keyword}"
+                       placeholder="Search by subject (Maths, English...) or location (Colombo, Kandy...)">
+                <button type="submit" class="btn btn-accent">Search</button>
+                <a th:href="@{/student/search}" class="btn btn-outline-secondary">Clear</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Show search results info -->
+    <div class="results-info mb-3" th:if="${searchPerformed}">
+        <span th:text="'Found ' + ${resultCount} + ' tutor(s) for: &quot;' + ${keyword} + '&quot;'">
+            Results
+        </span>
+    </div>
+
+    <!-- =====================================================
+         TUTOR CARDS GRID
+         th:each loops through the tutors list
+         ===================================================== -->
+    <div class="row g-4">
+
+        <div class="col-md-6 col-lg-4" th:each="tutor : ${tutors}">
+            <div class="tutor-card h-100">
+
+                <!-- Tutor Header: Avatar + Name + Rating -->
+                <div class="tutor-card-header">
+                    <div class="tutor-avatar">
+                        <span th:text="${tutor.user.fullName.substring(0,1).toUpperCase()}">T</span>
+                    </div>
+                    <div class="tutor-header-info">
+                        <h5 th:text="${tutor.user.fullName}">Tutor Name</h5>
+                        <div class="rating-stars">
+                            <!-- Star display using numbers -->
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <span th:text="${tutor.averageRating}">0.0</span>
+                            <small th:text="'(' + ${tutor.totalReviews} + ')'">
+                                (0)
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tutor-card-body">
+
+                    <!-- Subjects -->
+                    <div class="tutor-info-row">
+                        <i class="bi bi-book"></i>
+                        <span th:text="${tutor.subjects}">Subjects</span>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="tutor-info-row">
+                        <i class="bi bi-geo-alt"></i>
+                        <span th:text="${tutor.location}">Location</span>
+                    </div>
+
+                    <!-- Qualification -->
+                    <div class="tutor-info-row" th:if="${tutor.qualification != null}">
+                        <i class="bi bi-award"></i>
+                        <span th:text="${tutor.qualification}">Qualification</span>
+                    </div>
+
+                    <!-- Experience -->
+                    <div class="tutor-info-row" th:if="${tutor.experienceYears != null}">
+                        <i class="bi bi-calendar3"></i>
+                        <span th:text="${tutor.experienceYears + ' years experience'}">
+                            Experience
+                        </span>
+                    </div>
+
+                    <!-- Availability -->
+                    <div class="tutor-info-row" th:if="${tutor.availability != null}">
+                        <i class="bi bi-clock"></i>
+                        <span th:text="${tutor.availability}">Availability</span>
+                    </div>
+
+                    <!-- Bio snippet (first 100 chars) -->
+                    <p class="tutor-bio-snippet" th:if="${tutor.bio != null}"
+                       th:text="${tutor.bio.length() > 100 ? tutor.bio.substring(0, 100) + '...' : tutor.bio}">
+                        Bio...
+                    </p>
+
+                </div>
+
+                <!-- Card Footer: Price + Action Buttons -->
+                <div class="tutor-card-footer">
+                    <div class="tutor-rate-display">
+                        <span class="rate-currency">LKR</span>
+                        <span class="rate-amount" th:text="${tutor.hourlyRate}">0</span>
+                        <span class="rate-unit">/hr</span>
+                    </div>
+                    <div class="tutor-actions d-flex gap-2">
+                        <!-- View Profile button -->
+                        <a th:href="@{/student/tutor/{id}(id=${tutor.id})}"
+                           class="btn btn-outline-primary btn-sm">
+                            View Profile
+                        </a>
+                        <!-- Book Session button -->
+                        <a th:href="@{/booking/new(tutorId=${tutor.id})}"
+                           class="btn btn-accent btn-sm">
+                            <i class="bi bi-calendar-plus me-1"></i>Book
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty state when no tutors found -->
+        <div class="col-12" th:if="${#lists.isEmpty(tutors)}">
+            <div class="empty-state">
+                <i class="bi bi-search"></i>
+                <h5>No tutors found</h5>
+                <p th:if="${searchPerformed}">
+                    No tutors match "<span th:text="${keyword}"></span>". Try a different search term.
+                </p>
+                <p th:if="${not searchPerformed}">
+                    No tutors are available right now. Please check back soon!
+                </p>
+                <a th:href="@{/student/search}" th:if="${searchPerformed}"
+                   class="btn btn-outline-primary">
+                    Show All Tutors
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div th:replace="~{layout/base :: scripts}"></div>
+</body>
+</html>

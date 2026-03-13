@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <head th:replace="~{layout/base :: head}"></head>
+    <title>Student Dashboard | Ko-Sir AI</title>
+</head>
+<body>
+<nav th:replace="~{layout/base :: navbar}"></nav>
+<div th:replace="~{layout/base :: flashMessages}"></div>
+
+<div class="container py-4">
+
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h1>Welcome back, <span th:text="${currentUser.fullName}">Student</span>!</h1>
+        <p>Here's what's happening with your learning sessions.</p>
+    </div>
+
+    <!-- =====================================================
+         STATS CARDS ROW
+         Shows quick counts at a glance.
+         th:text="${pendingCount}" - dynamic number from controller
+         ===================================================== -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card stat-card-pending">
+                <div class="stat-card-icon"><i class="bi bi-hourglass-split"></i></div>
+                <div class="stat-card-body">
+                    <span class="stat-card-number" th:text="${pendingCount}">0</span>
+                    <span class="stat-card-label">Pending</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card stat-card-confirmed">
+                <div class="stat-card-icon"><i class="bi bi-calendar-check"></i></div>
+                <div class="stat-card-body">
+                    <span class="stat-card-number" th:text="${confirmedCount}">0</span>
+                    <span class="stat-card-label">Confirmed</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card stat-card-completed">
+                <div class="stat-card-icon"><i class="bi bi-check-circle"></i></div>
+                <div class="stat-card-body">
+                    <span class="stat-card-number" th:text="${completedCount}">0</span>
+                    <span class="stat-card-label">Completed</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card stat-card-total">
+                <div class="stat-card-icon"><i class="bi bi-journal-bookmark"></i></div>
+                <div class="stat-card-body">
+                    <span class="stat-card-number" th:text="${totalBookings}">0</span>
+                    <span class="stat-card-label">Total Sessions</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         ACTION BUTTONS
+         ===================================================== -->
+    <div class="row g-3 mb-4">
+        <div class="col">
+            <a th:href="@{/student/search}" class="btn btn-accent btn-lg me-2">
+                <i class="bi bi-search me-2"></i>Find a Tutor
+            </a>
+            <a th:href="@{/student/bookings}" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-calendar3 me-2"></i>View All Bookings
+            </a>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         RECENT BOOKINGS TABLE
+         th:if - only shows if the list is not empty
+         th:each - loops through the bookings list
+         ===================================================== -->
+    <div class="card dashboard-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Sessions</h5>
+            <a th:href="@{/student/bookings}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        <div class="card-body p-0">
+
+            <!-- If there ARE bookings, show the table -->
+            <div th:if="${not #lists.isEmpty(recentBookings)}">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tutor</th>
+                                <th>Subject</th>
+                                <th>Date</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--
+                                th:each loops over recentBookings list.
+                                "booking" is the loop variable for each item.
+                            -->
+                            <tr th:each="booking : ${recentBookings}">
+                                <td>
+                                    <strong th:text="${booking.tutorProfile.user.fullName}">
+                                        Tutor Name
+                                    </strong>
+                                </td>
+                                <td th:text="${booking.subject}">Subject</td>
+                                <td>
+                                    <!-- th:text with date formatting -->
+                                    <span th:text="${#temporals.format(booking.bookingDate, 'dd MMM yyyy')}">
+                                        Date
+                                    </span>
+                                </td>
+                                <td th:text="${booking.durationHours + ' hr(s)'}">1 hr</td>
+                                <td>
+                                    <!--
+                                        th:class with conditional expression:
+                                        Changes badge color based on status value
+                                    -->
+                                    <span class="status-badge"
+                                          th:classappend="${booking.status.name() == 'PENDING'} ? 'status-pending' :
+                                                          (${booking.status.name() == 'CONFIRMED'} ? 'status-confirmed' :
+                                                          (${booking.status.name() == 'COMPLETED'} ? 'status-completed' : 'status-cancelled'))"
+                                          th:text="${booking.status}">
+                                        STATUS
+                                    </span>
+                                </td>
+                                <td>
+                                    <!-- Show "Leave Review" button only for completed bookings with no review -->
+                                    <a th:if="${booking.canLeaveReview()}"
+                                       th:href="@{/student/bookings/{id}/review(id=${booking.id})}"
+                                       class="btn btn-sm btn-warning">
+                                        <i class="bi bi-star"></i> Review
+                                    </a>
+                                    <!-- Show review badge if already reviewed -->
+                                    <span th:if="${booking.status.name() == 'COMPLETED' and !booking.canLeaveReview()}"
+                                          class="badge bg-success">
+                                        <i class="bi bi-check"></i> Reviewed
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- If there are NO bookings yet, show a friendly empty state -->
+            <div th:if="${#lists.isEmpty(recentBookings)}" class="empty-state">
+                <i class="bi bi-calendar-x"></i>
+                <h5>No sessions yet</h5>
+                <p>Book your first tutoring session to get started!</p>
+                <a th:href="@{/student/search}" class="btn btn-accent">
+                    <i class="bi bi-search me-2"></i>Find a Tutor
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div th:replace="~{layout/base :: scripts}"></div>
+</body>
+</html>

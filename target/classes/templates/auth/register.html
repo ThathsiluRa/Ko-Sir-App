@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<!--
+    REGISTRATION PAGE
+    =====================================================
+    Dynamic form that changes based on role selection.
+    - If STUDENT is selected: show student fields
+    - If TUTOR is selected: show tutor fields
+
+    The JavaScript at the bottom controls this visibility.
+
+    Thymeleaf form binding:
+    - th:object="${registerDto}" binds the form to our DTO
+    - th:field="*{fullName}" binds the input to registerDto.fullName
+    - th:errors="*{fullName}" shows validation errors for that field
+    =====================================================
+-->
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <head th:replace="~{layout/base :: head}"></head>
+    <title>Register | Ko-Sir AI</title>
+</head>
+
+<body class="auth-page">
+
+<nav th:replace="~{layout/base :: navbar}"></nav>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="auth-card-wide">
+
+                <!-- Header -->
+                <div class="auth-card-header">
+                    <div class="auth-icon">
+                        <i class="bi bi-person-plus-fill"></i>
+                    </div>
+                    <h2>Create Your Account</h2>
+                    <p>Join Ko-Sir AI as a student or tutor</p>
+                </div>
+
+                <!-- Error message (e.g., email already exists) -->
+                <div th:if="${errorMessage}" class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                </div>
+
+                <!-- REGISTRATION FORM
+                     th:action - where to POST the form
+                     th:object - which Java object to bind fields to
+                     The CSRF hidden input protects against cross-site attacks -->
+                <form th:action="@{/register}" method="post"
+                      th:object="${registerDto}" class="auth-form">
+
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                    <!-- ======================================================
+                         ROLE SELECTION - shown first so the form adapts
+                         ====================================================== -->
+                    <div class="role-selector mb-4">
+                        <label class="form-label fw-semibold">I want to join as:</label>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="role-option" id="student-option">
+                                    <!-- th:field="*{role}" binds to registerDto.role -->
+                                    <input type="radio" th:field="*{role}" value="STUDENT"
+                                           onchange="showRoleFields('STUDENT')" required>
+                                    <div class="role-option-content">
+                                        <i class="bi bi-person-fill"></i>
+                                        <span>Student</span>
+                                        <small>I want to find tutors</small>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-6">
+                                <label class="role-option" id="tutor-option">
+                                    <input type="radio" th:field="*{role}" value="TUTOR"
+                                           onchange="showRoleFields('TUTOR')">
+                                    <div class="role-option-content">
+                                        <i class="bi bi-person-badge-fill"></i>
+                                        <span>Tutor</span>
+                                        <small>I want to offer tutoring</small>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Show role validation error -->
+                        <div class="text-danger small mt-1" th:if="${#fields.hasErrors('role')}"
+                             th:errors="*{role}"></div>
+                    </div>
+
+                    <!-- ======================================================
+                         BASIC INFORMATION (shown for all roles)
+                         ====================================================== -->
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Full Name *</label>
+                            <input type="text" th:field="*{fullName}"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''"
+                                   placeholder="Your full name">
+                            <!-- Shows validation error if fullName is blank -->
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}"
+                                 th:errors="*{fullName}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" th:field="*{phone}"
+                                   class="form-control"
+                                   placeholder="+254 700 000 000">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email Address *</label>
+                            <input type="email" th:field="*{email}"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
+                                   placeholder="you@example.com">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}"
+                                 th:errors="*{email}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Password *</label>
+                            <input type="password" th:field="*{password}"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''"
+                                   placeholder="Min. 6 characters">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}"
+                                 th:errors="*{password}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Confirm Password *</label>
+                            <input type="password" th:field="*{confirmPassword}"
+                                   class="form-control"
+                                   placeholder="Repeat your password">
+                        </div>
+                    </div>
+
+                    <!-- ======================================================
+                         STUDENT-SPECIFIC FIELDS
+                         Hidden by default, shown when STUDENT is selected.
+                         ====================================================== -->
+                    <div id="studentFields" class="role-fields mt-4" style="display:none;">
+                        <div class="section-divider">
+                            <span><i class="bi bi-person-fill me-2"></i>Student Information</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Current Grade / Year</label>
+                                <input type="text" th:field="*{grade}"
+                                       class="form-control"
+                                       placeholder="e.g. Form 4, Grade 8, Year 11">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">School Name</label>
+                                <input type="text" th:field="*{school}"
+                                       class="form-control"
+                                       placeholder="Your school name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Parent/Guardian Name</label>
+                                <input type="text" th:field="*{parentName}"
+                                       class="form-control"
+                                       placeholder="Guardian's full name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Parent/Guardian Phone</label>
+                                <input type="tel" th:field="*{parentPhone}"
+                                       class="form-control"
+                                       placeholder="+254 700 000 000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ======================================================
+                         TUTOR-SPECIFIC FIELDS
+                         Hidden by default, shown when TUTOR is selected.
+                         ====================================================== -->
+                    <div id="tutorFields" class="role-fields mt-4" style="display:none;">
+                        <div class="section-divider">
+                            <span><i class="bi bi-person-badge-fill me-2"></i>Tutor Information</span>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Your profile will be reviewed by our admin before you appear in searches.
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Subjects You Teach *</label>
+                                <input type="text" th:field="*{subjects}"
+                                       class="form-control"
+                                       placeholder="e.g. Mathematics, Physics, Chemistry">
+                                <small class="text-muted">Separate multiple subjects with commas</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Hourly Rate (KES) *</label>
+                                <input type="number" th:field="*{hourlyRate}"
+                                       class="form-control"
+                                       placeholder="e.g. 500" min="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Years of Experience</label>
+                                <input type="number" th:field="*{experienceYears}"
+                                       class="form-control"
+                                       placeholder="0" min="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Qualification</label>
+                                <input type="text" th:field="*{qualification}"
+                                       class="form-control"
+                                       placeholder="e.g. BSc Mathematics, UoN">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Location / Area</label>
+                                <input type="text" th:field="*{location}"
+                                       class="form-control"
+                                       placeholder="e.g. Nairobi - Westlands">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-accent w-100 btn-lg mt-4">
+                        <i class="bi bi-person-check me-2"></i>Create Account
+                    </button>
+                </form>
+
+                <div class="auth-footer mt-4 text-center">
+                    <p>Already have an account?
+                        <a th:href="@{/login}" class="auth-link">Sign in here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{layout/base :: scripts}"></div>
+
+<script>
+/**
+ * Show/hide role-specific form fields based on radio button selection.
+ * Called when user clicks Student or Tutor radio button.
+ */
+function showRoleFields(role) {
+    const studentFields = document.getElementById('studentFields');
+    const tutorFields = document.getElementById('tutorFields');
+    const studentOption = document.getElementById('student-option');
+    const tutorOption = document.getElementById('tutor-option');
+
+    if (role === 'STUDENT') {
+        studentFields.style.display = 'block';
+        tutorFields.style.display = 'none';
+        studentOption.classList.add('selected');
+        tutorOption.classList.remove('selected');
+    } else if (role === 'TUTOR') {
+        tutorFields.style.display = 'block';
+        studentFields.style.display = 'none';
+        tutorOption.classList.add('selected');
+        studentOption.classList.remove('selected');
+    }
+}
+
+// If the form was submitted with errors, re-show the appropriate fields
+// (so the user sees their filled-in data)
+document.addEventListener('DOMContentLoaded', function() {
+    const selectedRole = document.querySelector('input[name="role"]:checked');
+    if (selectedRole) {
+        showRoleFields(selectedRole.value);
+    }
+});
+</script>
+
+</body>
+</html>
