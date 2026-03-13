@@ -151,7 +151,7 @@ public class SecurityConfig {
             // =====================================================
             .logout(logout -> logout
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout")) // Logout URL
-                .logoutSuccessUrl("/login?logout=true")  // Redirect after logout
+                .logoutSuccessUrl("/")  // Redirect to home page after logout
                 .invalidateHttpSession(true)             // Clear the session
                 .deleteCookies("JSESSIONID")             // Remove session cookie
                 .permitAll()
