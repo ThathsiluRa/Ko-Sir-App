@@ -144,6 +144,22 @@
                     <i class="bi bi-chat-dots me-1"></i>
                     <em th:text="${booking.notes}">Notes</em>
                 </div>
+                <!-- Student contact info (available once payment done) -->
+                <div th:if="${booking.status.name() != 'PENDING_PAYMENT'}"
+                     style="font-size:0.82rem;margin-bottom:0.5rem;">
+                    <span style="color:var(--text-muted);font-size:0.73rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;">
+                        <i class="bi bi-telephone me-1"></i>Student:
+                    </span>
+                    <a th:href="'tel:' + ${booking.studentProfile.user.phone}"
+                       th:text="${booking.studentProfile.user.phone}"
+                       style="color:var(--green-mid);text-decoration:none;margin-left:4px;">Phone</a>
+                    <span th:if="${booking.studentProfile.parentPhone != null}" style="margin-left:10px;color:var(--text-muted);">
+                        Parent:
+                        <a th:href="'tel:' + ${booking.studentProfile.parentPhone}"
+                           th:text="${booking.studentProfile.parentPhone}"
+                           style="color:var(--green-mid);text-decoration:none;">Parent</a>
+                    </span>
+                </div>
                 <!-- Confirm / Reject buttons -->
                 <div class="booking-actions d-flex gap-2">
                     <form th:action="@{/tutor/bookings/{id}/confirm(id=${booking.id})}"

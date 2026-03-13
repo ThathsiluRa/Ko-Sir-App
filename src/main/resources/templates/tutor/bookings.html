@@ -70,8 +70,38 @@
                 <div th:if="${booking.notes != null}" class="booking-status-note">
                     <i class="bi bi-chat-dots me-1"></i><em th:text="${booking.notes}">Notes</em>
                 </div>
+                <!-- Student contact info (shown after payment) -->
+                <div th:if="${booking.status.name() != 'PENDING_PAYMENT'}"
+                     style="background:rgba(21,92,69,0.05);border:1px solid var(--border);border-radius:10px;padding:0.65rem 0.9rem;margin-bottom:0.6rem;font-size:0.83rem;">
+                    <div class="fw-semibold mb-1" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);">
+                        <i class="bi bi-person-lines-fill me-1"></i>Student Contact
+                    </div>
+                    <div class="d-flex flex-wrap gap-3">
+                        <span><i class="bi bi-telephone-fill me-1" style="color:var(--gold);"></i>
+                            <a th:href="'tel:' + ${booking.studentProfile.user.phone}"
+                               th:text="${booking.studentProfile.user.phone}" style="color:var(--green-mid);text-decoration:none;">Phone</a>
+                        </span>
+                        <span th:if="${booking.studentProfile.user.email != null}">
+                            <i class="bi bi-envelope-fill me-1" style="color:var(--gold);"></i>
+                            <a th:href="'mailto:' + ${booking.studentProfile.user.email}"
+                               th:text="${booking.studentProfile.user.email}" style="color:var(--green-mid);text-decoration:none;">Email</a>
+                        </span>
+                        <span th:if="${booking.studentProfile.parentPhone != null}">
+                            <i class="bi bi-people-fill me-1" style="color:var(--gold);"></i>
+                            Parent: <a th:href="'tel:' + ${booking.studentProfile.parentPhone}"
+                                       th:text="${booking.studentProfile.parentPhone}" style="color:var(--green-mid);text-decoration:none;">Parent</a>
+                        </span>
+                    </div>
+                </div>
+
                 <!-- Actions -->
                 <div class="booking-actions d-flex gap-2 flex-wrap">
+                    <!-- Chat button — available once payment is done -->
+                    <a th:if="${booking.status.name() != 'PENDING_PAYMENT' and booking.status.name() != 'CANCELLED' and booking.status.name() != 'REJECTED'}"
+                       th:href="@{'/booking/' + ${booking.id} + '/chat'}"
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-chat-dots me-1"></i>Chat
+                    </a>
                     <!-- PENDING: confirm or reject -->
                     <form th:if="${booking.status.name() == 'PENDING'}"
                           th:action="@{/tutor/bookings/{id}/confirm(id=${booking.id})}" method="post">

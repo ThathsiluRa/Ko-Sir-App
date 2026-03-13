@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <head th:replace="~{layout/base :: head}"></head>
+    <title th:text="'Chat with ' + ${otherPartyName} + ' | Ko-Sir AI'">Chat</title>
+    <style>
+        .chat-page-wrap {
+            min-height: calc(100vh - 70px);
+            background: var(--ivory);
+            padding: 2rem 0 4rem;
+        }
+
+        /* ── Chat layout ── */
+        .chat-layout {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 200px);
+            min-height: 500px;
+            background: #fff;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+
+        /* ── Chat header ── */
+        .chat-header {
+            background: var(--green-deep);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-shrink: 0;
+        }
+        .chat-header-avatar {
+            width: 42px; height: 42px;
+            background: var(--gold);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem; font-weight: 700;
+            color: var(--green-deep);
+            flex-shrink: 0;
+        }
+        .chat-header-info h5 {
+            color: #fff; margin: 0; font-size: 1rem; font-weight: 600;
+        }
+        .chat-header-info small {
+            color: rgba(255,255,255,0.55); font-size: 0.78rem;
+        }
+        .chat-back-btn {
+            margin-left: auto;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: flex; align-items: center; gap: 0.4rem;
+            transition: color 0.2s;
+        }
+        .chat-back-btn:hover { color: var(--gold); }
+
+        /* ── Booking info strip ── */
+        .chat-booking-strip {
+            background: var(--ivory-dark);
+            border-bottom: 1px solid var(--border);
+            padding: 0.6rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        .chat-booking-strip span i { color: var(--gold); margin-right: 4px; }
+
+        /* ── Messages area ── */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            scroll-behavior: smooth;
+        }
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        /* ── Individual message bubble ── */
+        .msg-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+        .msg-row.mine { flex-direction: row-reverse; }
+
+        .msg-avatar {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: var(--green-mid);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700; color: #fff;
+            flex-shrink: 0;
+            margin-bottom: 2px;
+        }
+        .msg-row.mine .msg-avatar { background: var(--gold); color: var(--green-deep); }
+
+        .msg-bubble {
+            max-width: 70%;
+            padding: 0.65rem 1rem;
+            border-radius: 18px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .msg-row:not(.mine) .msg-bubble {
+            background: var(--ivory-dark);
+            border-bottom-left-radius: 4px;
+            color: var(--text-dark);
+        }
+        .msg-row.mine .msg-bubble {
+            background: var(--green-deep);
+            border-bottom-right-radius: 4px;
+            color: #fff;
+        }
+        .msg-time {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            margin-top: 3px;
+            text-align: center;
+        }
+        .msg-row.mine .msg-time { text-align: right; }
+
+        /* ── Date separator ── */
+        .date-separator {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.72rem;
+        }
+        .date-separator::before, .date-separator::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* ── Empty state ── */
+        .chat-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            padding: 2rem;
+            text-align: center;
+        }
+        .chat-empty i { font-size: 3rem; margin-bottom: 0.75rem; opacity: 0.4; }
+
+        /* ── Input area ── */
+        .chat-input-area {
+            border-top: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            background: #fff;
+            flex-shrink: 0;
+        }
+        .chat-input-form {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+        }
+        .chat-input-form textarea {
+            flex: 1;
+            resize: none;
+            border: 1.5px solid var(--border);
+            border-radius: 14px;
+            padding: 0.7rem 1rem;
+            font-size: 0.9rem;
+            font-family: var(--font-body);
+            line-height: 1.5;
+            transition: border-color 0.2s;
+            min-height: 44px; max-height: 120px;
+        }
+        .chat-input-form textarea:focus {
+            outline: none;
+            border-color: var(--green-mid);
+            box-shadow: 0 0 0 3px rgba(21,92,69,0.08);
+        }
+        .btn-send {
+            background: var(--gold);
+            color: var(--green-deep);
+            border: none;
+            border-radius: 14px;
+            width: 46px; height: 46px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        .btn-send:hover { background: var(--gold-dark); transform: scale(1.05); }
+
+        /* ── Contact info panel (tutor only, for confirmed bookings) ── */
+        .contact-panel {
+            background: var(--ivory-dark);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .contact-panel h6 {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.88rem;
+            margin-bottom: 0.5rem;
+        }
+        .contact-item i { color: var(--gold); width: 16px; }
+        .contact-item a { color: var(--green-mid); text-decoration: none; }
+        .contact-item a:hover { text-decoration: underline; }
+    </style>
+</head>
+
+<body>
+<nav th:replace="~{layout/base :: navbar}"></nav>
+<div th:replace="~{layout/base :: flashMessages}"></div>
+
+<div class="chat-page-wrap">
+    <div class="container">
+        <div class="row g-4 justify-content-center">
+
+            <!-- LEFT: Contact info sidebar (tutor only, after payment) -->
+            <div class="col-lg-3 order-lg-1"
+                 th:if="${isTutor and booking.status.name() != 'PENDING_PAYMENT'}">
+
+                <div class="contact-panel">
+                    <h6><i class="bi bi-person-lines-fill me-1"></i>Student Details</h6>
+
+                    <div class="contact-item">
+                        <i class="bi bi-person-fill"></i>
+                        <span th:text="${booking.studentProfile.user.fullName}">Student Name</span>
+                    </div>
+
+                    <div class="contact-item">
+                        <i class="bi bi-telephone-fill"></i>
+                        <a th:href="'tel:' + ${booking.studentProfile.user.phone}"
+                           th:text="${booking.studentProfile.user.phone}">Phone</a>
+                    </div>
+
+                    <div class="contact-item" th:if="${booking.sessionLocation != null}">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <span th:text="${booking.sessionLocation}">Address</span>
+                    </div>
+
+                    <div class="contact-item" th:if="${booking.studentProfile.parentName != null}">
+                        <i class="bi bi-people-fill"></i>
+                        <span>Parent: <span th:text="${booking.studentProfile.parentName}">Parent</span></span>
+                    </div>
+
+                    <div class="contact-item" th:if="${booking.studentProfile.parentPhone != null}">
+                        <i class="bi bi-telephone"></i>
+                        <a th:href="'tel:' + ${booking.studentProfile.parentPhone}"
+                           th:text="${booking.studentProfile.parentPhone}">Parent Phone</a>
+                    </div>
+
+                    <div class="contact-item" th:if="${booking.studentProfile.school != null}">
+                        <i class="bi bi-building"></i>
+                        <span th:text="${booking.studentProfile.school}">School</span>
+                    </div>
+
+                    <div class="contact-item" th:if="${booking.studentProfile.grade != null}">
+                        <i class="bi bi-mortarboard"></i>
+                        <span th:text="${booking.studentProfile.grade}">Grade</span>
+                    </div>
+
+                    <hr style="border-color:var(--border);">
+
+                    <div class="contact-item">
+                        <i class="bi bi-calendar3"></i>
+                        <span th:text="${booking.bookingDate + ' at ' + booking.startTime}">Date</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="bi bi-book"></i>
+                        <span th:text="${booking.subject}">Subject</span>
+                    </div>
+                </div>
+
+                <a th:href="@{/tutor/bookings}" class="btn btn-outline-secondary btn-sm w-100">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Sessions
+                </a>
+            </div>
+
+            <!-- STUDENT sidebar -->
+            <div class="col-lg-3 order-lg-1"
+                 th:unless="${isTutor}">
+                <div class="contact-panel">
+                    <h6><i class="bi bi-person-lines-fill me-1"></i>Tutor Details</h6>
+
+                    <div class="contact-item">
+                        <i class="bi bi-person-fill"></i>
+                        <span th:text="${booking.tutorProfile.user.fullName}">Tutor Name</span>
+                    </div>
+
+                    <div class="contact-item">
+                        <i class="bi bi-telephone-fill"></i>
+                        <a th:href="'tel:' + ${booking.tutorProfile.user.phone}"
+                           th:text="${booking.tutorProfile.user.phone}">Phone</a>
+                    </div>
+
+                    <div class="contact-item" th:if="${booking.sessionLocation != null}">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <span th:text="${booking.sessionLocation}">Location</span>
+                    </div>
+
+                    <hr style="border-color:var(--border);">
+
+                    <div class="contact-item">
+                        <i class="bi bi-calendar3"></i>
+                        <span th:text="${booking.bookingDate + ' at ' + booking.startTime}">Date</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="bi bi-book"></i>
+                        <span th:text="${booking.subject}">Subject</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="bi bi-cash-coin"></i>
+                        <span>LKR <span th:text="${booking.totalPrice}">0</span></span>
+                    </div>
+                </div>
+
+                <a th:href="@{/student/bookings}" class="btn btn-outline-secondary btn-sm w-100">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Bookings
+                </a>
+            </div>
+
+            <!-- MAIN: Chat window -->
+            <div class="col-lg-9 order-lg-2 d-flex flex-column">
+                <div class="chat-layout">
+
+                    <!-- Chat header -->
+                    <div class="chat-header">
+                        <div class="chat-header-avatar"
+                             th:text="${otherPartyName.substring(0,1).toUpperCase()}">T</div>
+                        <div class="chat-header-info">
+                            <h5 th:text="${otherPartyName}">Name</h5>
+                            <small th:text="${isTutor ? 'Student' : 'Tutor'}">Role</small>
+                        </div>
+                        <a th:href="${isTutor ? '/tutor/bookings' : '/student/bookings'}"
+                           class="chat-back-btn">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </a>
+                    </div>
+
+                    <!-- Booking context strip -->
+                    <div class="chat-booking-strip">
+                        <span><i class="bi bi-book"></i><span th:text="${booking.subject}">Subject</span></span>
+                        <span><i class="bi bi-calendar3"></i><span th:text="${booking.bookingDate}">Date</span></span>
+                        <span><i class="bi bi-clock"></i><span th:text="${booking.startTime}">Time</span></span>
+                        <span th:if="${booking.sessionLocation != null}">
+                            <i class="bi bi-geo-alt"></i><span th:text="${booking.sessionLocation}">Location</span>
+                        </span>
+                        <span th:class="${'badge ms-auto ' + (booking.status.name() == 'CONFIRMED' ? 'bg-success' : booking.status.name() == 'PENDING' ? 'bg-warning text-dark' : 'bg-secondary')}"
+                              th:text="${booking.status}">Status</span>
+                    </div>
+
+                    <!-- Messages -->
+                    <div class="chat-messages" id="chatMessages">
+
+                        <!-- Empty state -->
+                        <div th:if="${#lists.isEmpty(messages)}" class="chat-empty">
+                            <i class="bi bi-chat-dots"></i>
+                            <p style="font-size:0.9rem;">No messages yet.<br>Say hello to get the conversation started!</p>
+                        </div>
+
+                        <!--
+                            Render each message.
+                            "mine" class = current user sent this message → aligns right.
+                        -->
+                        <th:block th:each="msg, iter : ${messages}">
+
+                            <!-- Date separator when date changes -->
+                            <div class="date-separator"
+                                 th:if="${iter.first or #temporals.format(msg.sentAt,'dd/MM/yyyy') != #temporals.format(messages[iter.index - 1].sentAt,'dd/MM/yyyy')}">
+                                <span th:text="${#temporals.format(msg.sentAt,'EEEE, dd MMMM yyyy')}">Date</span>
+                            </div>
+
+                            <div th:class="${'msg-row ' + (msg.sender.id == currentUser.id ? 'mine' : '')}">
+                                <div class="msg-avatar"
+                                     th:text="${msg.sender.fullName.substring(0,1).toUpperCase()}">U</div>
+                                <div>
+                                    <div class="msg-bubble" th:text="${msg.content}">Message text</div>
+                                    <div class="msg-time"
+                                         th:text="${#temporals.format(msg.sentAt,'hh:mm a')}">Time</div>
+                                </div>
+                            </div>
+                        </th:block>
+                    </div>
+
+                    <!-- Message input -->
+                    <div class="chat-input-area">
+                        <form th:action="@{'/booking/' + ${booking.id} + '/chat/send'}"
+                              method="post"
+                              class="chat-input-form"
+                              id="chatForm">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <textarea name="content"
+                                      id="chatInput"
+                                      placeholder="Type a message..."
+                                      rows="1"
+                                      maxlength="2000"
+                                      required
+                                      onkeydown="handleEnter(event)"></textarea>
+                            <button type="submit" class="btn-send" title="Send">
+                                <i class="bi bi-send-fill"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{layout/base :: scripts}"></div>
+<script>
+// Auto-scroll to bottom on load
+const chatMessages = document.getElementById('chatMessages');
+if (chatMessages) {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Send on Enter (Shift+Enter for new line)
+function handleEnter(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const val = document.getElementById('chatInput').value.trim();
+        if (val) document.getElementById('chatForm').submit();
+    }
+}
+
+// Auto-resize textarea
+const textarea = document.getElementById('chatInput');
+if (textarea) {
+    textarea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+    textarea.focus();
+}
+</script>
+</body>
+</html>

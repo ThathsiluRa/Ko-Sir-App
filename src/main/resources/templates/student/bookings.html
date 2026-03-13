@@ -89,6 +89,13 @@
                 <!-- Action Buttons -->
                 <div class="booking-actions">
 
+                    <!-- Chat button — available once payment is done -->
+                    <a th:if="${booking.status.name() != 'PENDING_PAYMENT' and booking.status.name() != 'CANCELLED' and booking.status.name() != 'REJECTED'}"
+                       th:href="@{'/booking/' + ${booking.id} + '/chat'}"
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-chat-dots me-1"></i>Message Tutor
+                    </a>
+
                     <!-- Leave Review button (only for completed, unreviewed bookings) -->
                     <a th:if="${booking.canLeaveReview()}"
                        th:href="@{/student/bookings/{id}/review(id=${booking.id})}"
